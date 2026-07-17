@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角色設定表產生器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700;900&family=Noto+Sans+TC:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-a:#F7E9DA;
+    --bg-b:#EAD0B2;
+    --panel:#FFFCF6;
+    --panel-soft:#F6E7D6;
+    --ink:#4A3226;
+    --ink-soft:#8B7461;
+    --ink-faint:#C9B39C;
+    --accent:#D9835A;
+    --accent-deep:#BC663E;
+    --rose:#B4776C;
+    --line: rgba(74,50,38,0.12);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 12% -8%, rgba(255,255,255,0.65), transparent 42%),
+      radial-gradient(circle at 92% 6%, rgba(217,131,90,0.20), transparent 46%),
+      linear-gradient(165deg, var(--bg-a) 0%, var(--bg-b) 100%);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:'Noto Sans TC', sans-serif;
+    line-height:1.6;
+    padding-bottom:80px;
+  }
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header.hero{
+    position:relative;
+    max-width:1040px;
+    margin:0 auto;
+    padding:64px 28px 28px;
+    overflow:hidden;
+  }
+  .tape{
+    position:absolute;
+    top:-60px; left:-40px;
+    width:280px; height:280px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(217,131,90,0.35), rgba(217,131,90,0) 70%);
+    filter:blur(2px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'Cormorant Garamond','Noto Serif TC', serif;
+    font-style:italic;
+    color:var(--accent-deep);
+    font-size:17px;
+    letter-spacing:.08em;
+    display:inline-block;
+    margin-bottom:8px;
+  }
+  h1.title{
+    font-family:'Noto Serif TC', serif;
+    font-weight:700;
+    font-size:clamp(32px, 5vw, 50px);
+    margin:0 0 10px;
+    letter-spacing:.03em;
+    color:var(--ink);
+  }
+  .subtitle{
+    color:var(--ink-soft);
+    font-size:15.5px;
+    max-width:560px;
+    position:relative;
+  }
+  .hero-meta{
+    margin-top:26px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:13px;
+    color:var(--ink-soft);
+    position:relative;
+  }
+  .hero-meta span{
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:6px 14px;
+    border-radius:100px;
+    box-shadow:0 6px 14px -10px rgba(74,50,38,.3);
+  }
+
+  /* ---------- Character tabs ---------- */
+  .tabs-outer{
+    max-width:1040px;
+    margin:0 auto;
+    padding:0 28px 22px;
+  }
+  .tabs-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+    letter-spacing:.06em;
+  }
+  .tabs-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+  .tab{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:9px 10px 9px 16px;
+    border-radius:100px;
+    font-size:13.5px;
+    cursor:pointer;
+    max-width:220px;
+    box-shadow:0 8px 18px -14px rgba(74,50,38,.4);
+    transition:background .15s, color .15s, box-shadow .15s;
+  }
+  .tab span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tab.active{
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    border-color:transparent;
+    color:#fff;
+    font-weight:600;
+    box-shadow:0 12px 22px -12px rgba(188,102,62,.55);
+  }
+  .tab-close{
+    border:none;
+    background:transparent;
+    color:inherit;
+    opacity:.6;
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .tab-close:hover{opacity:1;}
+  .tab-add{
+    font-family:inherit;
+    font-size:13.5px;
+    padding:9px 18px;
+    border-radius:100px;
+    border:1px dashed var(--ink-faint);
+    background:transparent;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .tab-add:hover{border-color:var(--accent); color:var(--accent-deep);}
+
+  /* ---------- Layout ---------- */
+  main{
+    max-width:1040px;
+    margin:0 auto;
+    padding:0 28px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+  }
+  @media (max-width:760px){
+    main{grid-template-columns:1fr;}
+  }
+
+  .card{
+    background:linear-gradient(180deg, #FFFEFB, #FBF2E6);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:26px 26px 28px;
+    position:relative;
+    box-shadow:0 24px 48px -34px rgba(74,50,38,.45), 0 2px 8px rgba(74,50,38,.06);
+  }
+  .card.span2{grid-column:1 / -1;}
+  .card-num{
+    position:absolute;
+    top:-14px; left:22px;
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color:#fff;
+    font-size:11px;
+    letter-spacing:.08em;
+    padding:4px 12px;
+    border-radius:100px;
+    font-weight:600;
+    box-shadow:0 8px 16px -8px rgba(188,102,62,.6);
+  }
+  .card h2{
+    font-family:'Noto Serif TC', serif;
+    font-weight:600;
+    font-size:19.5px;
+    margin:8px 0 4px;
+    color:var(--ink);
+  }
+  .card .hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:16px;
+  }
+
+  /* ---------- form fields ---------- */
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px 16px;
+  }
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+  }
+  .field input[type=text], .field select{
+    font-family:inherit;
+    font-size:14.5px;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:#FFFEFB;
+    color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  .field.wide{grid-column:1 / -1;}
+
+  /* ---------- chips ---------- */
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+  }
+  .chip{
+    font-size:13.5px;
+    padding:8px 16px;
+    border:1px solid var(--line);
+    border-radius:100px;
+    background:#FFFEFB;
+    color:var(--ink);
+    cursor:pointer;
+    user-select:none;
+    transition:background .12s, color .12s, border-color .12s, transform .08s, box-shadow .12s;
+  }
+  .chip:hover{border-color:var(--accent); box-shadow:0 8px 16px -12px rgba(74,50,38,.4);}
+  .chip:active{transform:scale(.96);}
+  .chip.selected{
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    border-color:transparent;
+    color:#fff;
+    box-shadow:0 10px 18px -10px rgba(188,102,62,.55);
+  }
+  .chip.selected.multi{background:linear-gradient(135deg, var(--rose), #96574E); border-color:transparent; box-shadow:0 10px 18px -10px rgba(150,87,78,.5);}
+  .chip-add{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+  }
+  .chip-add input{
+    flex:1;
+    font-size:13px;
+    padding:8px 14px;
+    border:1px dashed var(--ink-faint);
+    border-radius:100px;
+    background:transparent;
+    color:var(--ink);
+  }
+  .chip-add button{
+    font-size:13px;
+    padding:8px 16px;
+    border-radius:100px;
+    border:1px solid transparent;
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color:#fff;
+    cursor:pointer;
+  }
+  .chip-add button:hover{opacity:.88;}
+
+  .item-notes{
+    margin-top:16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .item-notes:empty{margin-top:0;}
+  .item-note-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--panel-soft);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:8px 8px 8px 16px;
+  }
+  .item-note-row .tag{
+    font-size:13px;
+    font-weight:600;
+    color:var(--accent-deep);
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .item-note-row input{
+    flex:1;
+    font-family:inherit;
+    font-size:13px;
+    padding:8px 12px;
+    border:1px solid var(--line);
+    border-radius:100px;
+    background:#FFFEFB;
+    color:var(--ink);
+  }
+  .item-note-row input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+
+  textarea{
+    width:100%;
+    font-family:inherit;
+    font-size:14.5px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#FFFEFB;
+    color:var(--ink);
+    resize:vertical;
+    min-height:90px;
+  }
+  textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+
+  /* ---------- generated sheet ---------- */
+  .sheet-wrap{
+    max-width:1040px;
+    margin:56px auto 0;
+    padding:0 28px;
+  }
+  .sheet-label{
+    font-family:'Cormorant Garamond','Noto Serif TC', serif;
+    font-style:italic;
+    color:var(--accent-deep);
+    font-size:18px;
+    letter-spacing:.06em;
+    display:inline-block;
+    margin-bottom:10px;
+  }
+  .sheet{
+    position:relative;
+    background:linear-gradient(180deg, #FFFEFB, #FBF0E2);
+    border:1px solid var(--line);
+    border-radius:26px;
+    padding:38px 40px 34px;
+    box-shadow:0 30px 60px -32px rgba(74,50,38,.5), 0 4px 12px rgba(74,50,38,.06);
+    overflow:hidden;
+  }
+  .sheet::before{
+    content:"";
+    position:absolute;
+    top:-70px; right:-70px;
+    width:220px; height:220px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(217,131,90,0.28), rgba(217,131,90,0) 72%);
+    pointer-events:none;
+  }
+  .punch{display:none;}
+  .stamp{
+    position:relative;
+    display:inline-block;
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color:#fff;
+    font-family:'Noto Sans TC', sans-serif;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:.14em;
+    padding:6px 14px;
+    border-radius:100px;
+    margin-bottom:14px;
+    box-shadow:0 10px 18px -10px rgba(188,102,62,.55);
+  }
+  .sheet-title{
+    font-family:'Noto Serif TC', serif;
+    font-weight:700;
+    font-size:24px;
+    margin:0 0 4px;
+    color:var(--ink);
+  }
+  .sheet-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:20px;
+  }
+  .sheet-row{
+    display:flex;
+    gap:10px;
+    padding:11px 0;
+    border-bottom:1px dashed var(--line);
+    font-size:14.5px;
+    flex-wrap:wrap;
+    position:relative;
+  }
+  .sheet-row:last-of-type{border-bottom:none;}
+  .sheet-row .k{
+    width:150px;
+    flex-shrink:0;
+    color:var(--accent-deep);
+    font-weight:600;
+  }
+  .sheet-row .v{
+    flex:1;
+    min-width:180px;
+    white-space:pre-wrap;
+    color:var(--ink);
+  }
+  .sheet-row .v.empty{color:var(--ink-faint);}
+  .sheet-actions{
+    display:flex;
+    gap:12px;
+    margin-top:24px;
+    flex-wrap:wrap;
+    position:relative;
+  }
+  .btn{
+    font-family:inherit;
+    font-size:13.5px;
+    padding:11px 22px;
+    border-radius:100px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:opacity .15s, box-shadow .15s;
+  }
+  .btn.primary{
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color:#fff;
+    box-shadow:0 14px 24px -12px rgba(188,102,62,.6);
+  }
+  .btn.primary:hover{opacity:.9;}
+  .btn.ghost{background:transparent; color:var(--ink-soft); border-color:var(--line);}
+  .btn.ghost:hover{border-color:var(--accent); color:var(--accent-deep);}
+  .toast{
+    position:fixed;
+    bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(12px);
+    background:linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color:#fff;
+    font-size:13px;
+    padding:11px 20px;
+    border-radius:100px;
+    box-shadow:0 14px 26px -10px rgba(188,102,62,.6);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  footer{
+    max-width:1040px;
+    margin:40px auto 0;
+    padding:0 28px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="tape"></div>
+  <span class="eyebrow">委託準備 / 角色資料</span>
+  <h1 class="title">角色設定表產生器</h1>
+  <p class="subtitle">點選關鍵字或填入欄位，設定表會即時整理成一份完整的委託用文字說明，方便貼給繪師。可切換管理多個角色。</p>
+</header>
+
+<div class="tabs-outer">
+  <div class="tabs-label">角色列表（點選切換，資料僅保存在此分頁瀏覽期間內）</div>
+  <div class="tabs-bar" id="tabs-bar"></div>
+</div>
+
+<main id="form-main">
+
+  <div class="card span2" data-num="01">
+    <div class="card-num">01 基本資料</div>
+    <h2>基本資料</h2>
+    <div class="hint">可直接手動輸入的欄位</div>
+    <div class="field-grid" id="basic-fields"></div>
+  </div>
+
+  <div class="card" data-num="02">
+    <div class="card-num">02 髮長</div>
+    <h2>髮長</h2>
+    <div class="hint">單選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="hair_length"></div>
+    <div class="chip-add" data-cat-add="hair_length">
+      <input type="text" placeholder="新增自訂髮長...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card" data-num="03">
+    <div class="card-num">03 瀏海與分線</div>
+    <h2>瀏海與分線</h2>
+    <div class="hint">單選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="hair_bangs"></div>
+    <div class="chip-add" data-cat-add="hair_bangs">
+      <input type="text" placeholder="新增自訂瀏海／分線...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card span2" data-num="04">
+    <div class="card-num">04 髮質與動態感</div>
+    <h2>髮質與動態感</h2>
+    <div class="hint">多選，可自行新增關鍵字（含捲度、染髮技法、呆毛等細節）</div>
+    <div class="chip-row" data-cat="hair_texture"></div>
+    <div class="chip-add" data-cat-add="hair_texture">
+      <input type="text" placeholder="新增自訂髮質／動態感...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card span2" data-num="05">
+    <div class="card-num">05 綁髮與特殊造型</div>
+    <h2>綁髮與特殊造型</h2>
+    <div class="hint">單選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="hair_updo"></div>
+    <div class="chip-add" data-cat-add="hair_updo">
+      <input type="text" placeholder="新增自訂綁髮造型...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card" data-num="06">
+    <div class="card-num">06 髮色</div>
+    <h2>髮色</h2>
+    <div class="hint">單選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="haircolor"></div>
+    <div class="chip-add" data-cat-add="haircolor">
+      <input type="text" placeholder="新增自訂髮色...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card" data-num="07">
+    <div class="card-num">07 瞳色</div>
+    <h2>瞳色</h2>
+    <div class="hint">單選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="eyecolor"></div>
+    <div class="chip-add" data-cat-add="eyecolor">
+      <input type="text" placeholder="新增自訂瞳色...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card" data-num="08">
+    <div class="card-num">08 膚色</div>
+    <h2>膚色</h2>
+    <div class="hint">單選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="skintone"></div>
+    <div class="chip-add" data-cat-add="skintone">
+      <input type="text" placeholder="新增自訂膚色...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card span2" data-num="09">
+    <div class="card-num">09 體型</div>
+    <h2>體型</h2>
+    <div class="hint">多選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="bodytype"></div>
+    <div class="chip-add" data-cat-add="bodytype">
+      <input type="text" placeholder="新增自訂體型關鍵字...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card span2" data-num="10">
+    <div class="card-num">10 服裝風格</div>
+    <h2>服裝風格</h2>
+    <div class="hint">多選，可自行新增關鍵字</div>
+    <div class="chip-row" data-cat="clothing"></div>
+    <div class="chip-add" data-cat-add="clothing">
+      <input type="text" placeholder="新增自訂服裝風格...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card span2" data-num="11">
+    <div class="card-num">11 氣質／個性關鍵字</div>
+    <h2>氣質／個性關鍵字</h2>
+    <div class="hint">多選，可自行新增關鍵字（供繪師掌握表情與姿態的感覺）</div>
+    <div class="chip-row" data-cat="temperament"></div>
+    <div class="chip-add" data-cat-add="temperament">
+      <input type="text" placeholder="新增自訂氣質關鍵字...">
+      <button type="button">新增</button>
+    </div>
+  </div>
+
+  <div class="card span2" data-num="12">
+    <div class="card-num">12 配件／特徵</div>
+    <h2>配件／特徵</h2>
+    <div class="hint">多選，可自行新增關鍵字；選擇後可在下方補充細節（例如位置、圖樣），非必填</div>
+    <div class="chip-row" data-cat="accessories"></div>
+    <div class="chip-add" data-cat-add="accessories">
+      <input type="text" placeholder="新增自訂配件或特徵...">
+      <button type="button">新增</button>
+    </div>
+    <div class="item-notes" id="notes-accessories"></div>
+  </div>
+
+  <div class="card span2" data-num="13">
+    <div class="card-num">13 補充說明</div>
+    <h2>補充說明</h2>
+    <div class="hint">個性描述、背景故事、委託時想特別交代的事</div>
+    <div class="field" style="margin-bottom:14px;">
+      <label for="personality">個性描述</label>
+      <textarea id="personality" placeholder="例：表面冷淡，其實很照顧同伴，遇到甜食會失去戒心..."></textarea>
+    </div>
+    <div class="field">
+      <label for="notes">背景故事 / 委託備註</label>
+      <textarea id="notes" placeholder="例：希望呈現戰鬥後略顯疲憊的氛圍，武器請畫成長槍..."></textarea>
+    </div>
+  </div>
+
+</main>
+
+<div class="sheet-wrap">
+  <span class="sheet-label">↓ 即時生成</span>
+  <div class="sheet">
+    <div class="punch" style="top:20%"></div>
+    <div class="punch" style="top:50%"></div>
+    <div class="punch" style="top:80%"></div>
+    <div class="stamp">REFERENCE</div>
+    <h3 class="sheet-title" id="sheet-name">角色設定表</h3>
+    <p class="sheet-sub">此區會依照目前角色的選擇即時更新，完成後可直接複製貼給繪師</p>
+    <div id="sheet-body"></div>
+    <div class="sheet-actions">
+      <button class="btn primary" id="copy-btn">複製目前角色設定表文字</button>
+      <button class="btn ghost" id="reset-btn">清空目前角色欄位</button>
+    </div>
+  </div>
+</div>
+
+<footer>純前端工具，所有角色資料只存在你目前的瀏覽器分頁記憶體中，重新整理頁面或關閉分頁會清空全部角色，建議完成後先複製保存。</footer>
+
+<div class="toast" id="toast">已複製到剪貼簿</div>
+
+<script>
+(function(){
+  const basicFields = [
+    {id:'name', label:'角色名稱', type:'text', placeholder:'例：林小夜'},
+    {id:'gender', label:'性別', type:'select', options:['男性','女性','中性','其他']},
+    {id:'species', label:'種族／物種', type:'select', options:['人類','精靈','獸人','惡魔','天使','機械／仿生人','吸血鬼','龍族','其他']},
+    {id:'age', label:'年齡', type:'text', placeholder:'例：17歲 / 看起來20多歲'},
+    {id:'height', label:'身高', type:'text', placeholder:'例：165cm'},
+    {id:'weight', label:'體重', type:'text', placeholder:'例：48kg（可留空）'},
+    {id:'occupation', label:'職業／身份', type:'text', placeholder:'例：傭兵、學生、女僕...'},
+  ];
+
+  const categories = [
+    {id:'hair_length', label:'髮長', type:'single', options:['寸頭','側邊推高','短髮','燕尾短髮','鮑伯頭 (Bob)','妹妹頭短髮','及肩短髮 / 鎖骨髮','狼尾頭 (Wolf Cut)','中長直髮 / 及腰長髮','水母頭','公主切 (Hime Cut)']},
+    {id:'hair_bangs', label:'瀏海與分線', type:'single', options:['齊瀏海 / 妹妹頭','眉上劉海','空氣瀏海 / 碎瀏海','旁分 (三七分 / 二八分)','中分 (五五分)','M字瀏海','心形瀏海 / 逗號瀏海','遮眼瀏海 / 蓋眼髮','大背頭 / All Back']},
+    {id:'hair_texture', label:'髮質與動態感', type:'multi', options:['直髮 / 柔順黑直髮','微捲髮 / 自然捲','大波浪捲 / 浪漫長捲髮','羊毛捲 / 嬉皮捲','外翹短髮','呆毛 (Ahoge)','內層染 / 耳圈染','裙擺染','漸層染 (Ombre)','挑染 / 虎斑染']},
+    {id:'hair_updo', label:'綁髮與特殊造型', type:'single', options:['單馬尾 (高馬尾 / 低馬尾)','雙馬尾 (高雙馬尾 / 低雙馬尾)','公主頭 / 半紮髮','丸子頭 / 雙丸子頭 (包包頭)','單側麻花辮','雙麻花辮','髒辮 / 拳擊辮']},
+    {id:'haircolor', label:'髮色', type:'single', options:['黑色','深棕','棕色','亞麻色','金色','銀白','粉紅','藍色','紫色','紅色','漸層色','挑染多色']},
+    {id:'eyecolor', label:'瞳色', type:'single', options:['黑','棕','琥珀','藍','綠','紫','紅','異色瞳']},
+    {id:'skintone', label:'膚色', type:'single', options:['白皙','小麥色','健康膚色','古銅色','病態蒼白','深膚色']},
+    {id:'bodytype', label:'體型', type:'multi', options:['纖細','高挑','勻稱','豐滿','大胸','小胸','健壯','魁梧','嬌小','薄肌','倒三角體型','直角肩','寬肩','厚實胸膛','水蛇腰','腹肌','人魚線','長腿','蜜大腿','肌肉線條明顯的雙臂','骨節分明的手指']},
+    {id:'clothing', label:'服裝風格', type:'multi', options:['休閒便服','正式西裝','制服','和服','洛麗塔','哥德風','機能風','運動風','泳裝','禮服','盔甲／戰鬥服','傳統服飾','未來科技風','性感暴露']},
+    {id:'temperament', label:'氣質／個性關鍵字', type:'multi', options:['冷酷','活潑開朗','認真嚴肅','天然呆','陽光','憂鬱','活潑','熱情','幽默','率直','毒舌','傲嬌','輕浮','社交恐怖份子','沉穩','孤僻','話少','溫柔','高冷','病嬌','慵懶','木訥','自信','果斷','狠辣','謹慎','認真','腹黑','偏執','單純','知性','神祕','禁慾','優雅','痞帥','厭世','中二','好色']},
+    {id:'accessories', label:'配件／特徵', type:'multi', notesEnabled:true, options:['眼鏡','耳環','項鍊','帽子','疤痕','刺青','獸耳','尾巴','翅膀','面具','雀斑','痣','義肢','角']},
+  ];
+
+  let uidCounter = 1;
+  function blankCharacter(){
+    const c = { id:'c'+(uidCounter++), basic:{}, single:{}, multi:{}, itemNotes:{}, personality:'', notes:'' };
+    categories.forEach(cat=>{
+      if(cat.type === 'single') c.single[cat.id] = '';
+      else c.multi[cat.id] = [];
+      if(cat.notesEnabled) c.itemNotes[cat.id] = {};
+    });
+    return c;
+  }
+
+  let characters = [blankCharacter()];
+  let activeId = characters[0].id;
+  function activeChar(){ return characters.find(c=>c.id===activeId); }
+
+  const basicWrap = document.getElementById('basic-fields');
+  const tabsBar = document.getElementById('tabs-bar');
+  const personality = document.getElementById('personality');
+  const notes = document.getElementById('notes');
+  const sheetBody = document.getElementById('sheet-body');
+  const sheetName = document.getElementById('sheet-name');
+  const toast = document.getElementById('toast');
+
+  function createCustomInput(f, wrap){
+    const custom = document.createElement('input');
+    custom.type = 'text';
+    custom.id = 'basic-'+f.id+'-custom';
+    custom.placeholder = '請輸入自訂內容...';
+    custom.style.marginTop = '6px';
+    custom.addEventListener('input', ()=>{
+      activeChar().basic[f.id] = custom.value.trim();
+      onFormChange();
+    });
+    wrap.appendChild(custom);
+    return custom;
+  }
+
+  basicFields.forEach(f=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = f.label;
+    label.htmlFor = 'basic-'+f.id;
+    wrap.appendChild(label);
+
+    if(f.type === 'text'){
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = 'basic-'+f.id;
+      input.placeholder = f.placeholder || '';
+      input.addEventListener('input', ()=>{
+        activeChar().basic[f.id] = input.value.trim();
+        onFormChange();
+      });
+      wrap.appendChild(input);
+    } else if(f.type === 'select'){
+      const select = document.createElement('select');
+      select.id = 'basic-'+f.id;
+      const blank = document.createElement('option');
+      blank.value = ''; blank.textContent = '請選擇...';
+      select.appendChild(blank);
+      f.options.forEach(opt=>{
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt;
+        select.appendChild(o);
+      });
+      select.addEventListener('change', ()=>{
+        if(select.value === '其他'){
+          if(!document.getElementById('basic-'+f.id+'-custom')){
+            createCustomInput(f, wrap);
+          }
+          activeChar().basic[f.id] = '';
+        } else {
+          const custom = document.getElementById('basic-'+f.id+'-custom');
+          if(custom) custom.remove();
+          activeChar().basic[f.id] = select.value;
+        }
+        onFormChange();
+      });
+      wrap.appendChild(select);
+    }
+    basicWrap.appendChild(wrap);
+  });
+
+  categories.forEach(cat=>{
+    const row = document.querySelector('.chip-row[data-cat="'+cat.id+'"]');
+    cat.options.forEach(opt=>addChip(cat, row, opt));
+
+    const addWrap = document.querySelector('.chip-add[data-cat-add="'+cat.id+'"]');
+    const input = addWrap.querySelector('input');
+    const button = addWrap.querySelector('button');
+    const addCustom = ()=>{
+      const val = input.value.trim();
+      if(!val) return;
+      const chip = addChip(cat, row, val, true);
+      input.value = '';
+      toggleChip(cat, val, row, chip);
+    };
+    button.addEventListener('click', addCustom);
+    input.addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){ e.preventDefault(); addCustom(); }
+    });
+  });
+
+  function addChip(cat, row, label){
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (cat.type === 'multi' ? ' multi' : '');
+    chip.textContent = label;
+    chip.addEventListener('click', ()=> toggleChip(cat, label, row, chip));
+    row.appendChild(chip);
+    return chip;
+  }
+
+  function toggleChip(cat, label, row, chipEl){
+    const ac = activeChar();
+    const chip = chipEl || Array.from(row.children).find(c=>c.textContent===label);
+    if(cat.type === 'single'){
+      const isSame = ac.single[cat.id] === label;
+      Array.from(row.children).forEach(c=>c.classList.remove('selected'));
+      ac.single[cat.id] = isSame ? '' : label;
+      if(!isSame && chip) chip.classList.add('selected');
+    } else {
+      const list = ac.multi[cat.id];
+      const idx = list.indexOf(label);
+      if(idx > -1){
+        list.splice(idx,1);
+        if(chip) chip.classList.remove('selected');
+      } else {
+        list.push(label);
+        if(chip) chip.classList.add('selected');
+      }
+    }
+    if(cat.notesEnabled) renderItemNotes(cat, ac);
+    onFormChange();
+  }
+
+  personality.addEventListener('input', ()=>{ activeChar().personality = personality.value; render(); });
+  notes.addEventListener('input', ()=>{ activeChar().notes = notes.value; render(); });
+
+  function onFormChange(){
+    render();
+    renderTabs();
+  }
+
+  function populateBasicFields(char){
+    basicFields.forEach(f=>{
+      const el = document.getElementById('basic-'+f.id);
+      if(!el) return;
+      if(f.type === 'text'){
+        el.value = char.basic[f.id] || '';
+      } else if(f.type === 'select'){
+        const val = char.basic[f.id] || '';
+        let customEl = document.getElementById('basic-'+f.id+'-custom');
+        if(val && !f.options.includes(val)){
+          el.value = '其他';
+          if(!customEl) customEl = createCustomInput(f, el.parentElement);
+          customEl.value = val;
+        } else {
+          el.value = val;
+          if(customEl) customEl.remove();
+        }
+      }
+    });
+  }
+
+  function renderItemNotes(cat, char){
+    const container = document.getElementById('notes-'+cat.id);
+    if(!container) return;
+    container.innerHTML = '';
+    const selected = char.multi[cat.id] || [];
+    if(!char.itemNotes[cat.id]) char.itemNotes[cat.id] = {};
+    selected.forEach(label=>{
+      const row = document.createElement('div');
+      row.className = 'item-note-row';
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = '補充細節，例如位置、圖樣...';
+      input.value = char.itemNotes[cat.id][label] || '';
+      input.addEventListener('input', ()=>{
+        char.itemNotes[cat.id][label] = input.value.trim();
+        render();
+      });
+      row.appendChild(tag);
+      row.appendChild(input);
+      container.appendChild(row);
+    });
+  }
+
+  function populateChips(char){
+    document.querySelectorAll('.chip-row').forEach(row=>{
+      const catId = row.getAttribute('data-cat');
+      const cat = categories.find(c=>c.id===catId);
+      Array.from(row.children).forEach(chip=>{
+        const label = chip.textContent;
+        const isSelected = cat.type === 'single'
+          ? char.single[catId] === label
+          : char.multi[catId].includes(label);
+        chip.classList.toggle('selected', isSelected);
+      });
+      if(cat.notesEnabled) renderItemNotes(cat, char);
+    });
+  }
+
+  function loadCharacterIntoForm(char){
+    populateBasicFields(char);
+    populateChips(char);
+    personality.value = char.personality || '';
+    notes.value = char.notes || '';
+    render();
+  }
+
+  function renderTabs(){
+    tabsBar.innerHTML = '';
+    characters.forEach(char=>{
+      const tab = document.createElement('div');
+      tab.className = 'tab' + (char.id === activeId ? ' active' : '');
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = char.basic.name ? char.basic.name : '未命名角色';
+      tab.appendChild(nameSpan);
+      if(characters.length > 1){
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'tab-close';
+        closeBtn.textContent = '×';
+        closeBtn.title = '刪除此角色';
+        closeBtn.addEventListener('click', e=>{ e.stopPropagation(); deleteCharacter(char.id); });
+        tab.appendChild(closeBtn);
+      }
+      tab.addEventListener('click', ()=> switchCharacter(char.id));
+      tabsBar.appendChild(tab);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'tab-add';
+    addBtn.textContent = '+ 新增角色';
+    addBtn.addEventListener('click', addCharacter);
+    tabsBar.appendChild(addBtn);
+  }
+
+  function switchCharacter(id){
+    if(id === activeId) return;
+    activeId = id;
+    loadCharacterIntoForm(activeChar());
+    renderTabs();
+  }
+
+  function addCharacter(){
+    const c = blankCharacter();
+    characters.push(c);
+    activeId = c.id;
+    loadCharacterIntoForm(c);
+    renderTabs();
+  }
+
+  function deleteCharacter(id){
+    if(characters.length <= 1) return;
+    if(!confirm('確定要刪除這個角色嗎？此動作無法復原。')) return;
+    const idx = characters.findIndex(c=>c.id===id);
+    characters.splice(idx,1);
+    if(activeId === id){
+      const newIdx = Math.max(0, idx-1);
+      activeId = characters[newIdx].id;
+      loadCharacterIntoForm(activeChar());
+    }
+    renderTabs();
+  }
+
+  function collectHairTags(ac){
+    return [
+      ac.single.hair_length,
+      ac.single.hair_bangs,
+      ...ac.multi.hair_texture,
+      ac.single.hair_updo,
+      ac.single.haircolor,
+    ].filter(Boolean);
+  }
+
+  function formatWithNotes(ac, catId){
+    const notesMap = ac.itemNotes[catId] || {};
+    return ac.multi[catId].map(label=>{
+      const note = (notesMap[label] || '').trim();
+      return note ? label + '（' + note + '）' : label;
+    });
+  }
+
+  function line(k, v){
+    return '<div class="sheet-row"><div class="k">'+k+'</div><div class="v'+(v?'':' empty')+'">'+(v || '未填寫')+'</div></div>';
+  }
+
+  function render(){
+    const ac = activeChar();
+    const b = ac.basic;
+    sheetName.textContent = b.name ? b.name + ' — 角色設定表' : '角色設定表';
+
+    const basicLine1 = [b.gender, b.species].filter(Boolean).join(' ／ ');
+    const basicLine2 = [b.age && ('年齡：'+b.age), b.height && ('身高：'+b.height), b.weight && ('體重：'+b.weight)].filter(Boolean).join('　');
+
+    let html = '';
+    html += line('角色名稱', b.name);
+    html += line('性別／種族', basicLine1);
+    html += line('年齡／身高／體重', basicLine2);
+    html += line('職業／身份', b.occupation);
+    html += line('髮型', collectHairTags(ac).join('、'));
+    html += line('瞳色', ac.single.eyecolor);
+    html += line('膚色', ac.single.skintone);
+    html += line('體型', ac.multi.bodytype.join('、'));
+    html += line('服裝風格', ac.multi.clothing.join('、'));
+    html += line('氣質／個性關鍵字', ac.multi.temperament.join('、'));
+    html += line('配件／特徵', formatWithNotes(ac, 'accessories').join('、'));
+    html += line('個性描述', (ac.personality||'').trim());
+    html += line('背景故事／委託備註', (ac.notes||'').trim());
+
+    sheetBody.innerHTML = html;
+  }
+
+  function buildPlainText(){
+    const ac = activeChar();
+    const b = ac.basic;
+    const rows = [
+      ['角色名稱', b.name],
+      ['性別', b.gender],
+      ['種族／物種', b.species],
+      ['年齡', b.age],
+      ['身高', b.height],
+      ['體重', b.weight],
+      ['職業／身份', b.occupation],
+      ['髮型', collectHairTags(ac).join('、')],
+      ['瞳色', ac.single.eyecolor],
+      ['膚色', ac.single.skintone],
+      ['體型', ac.multi.bodytype.join('、')],
+      ['服裝風格', ac.multi.clothing.join('、')],
+      ['氣質／個性關鍵字', ac.multi.temperament.join('、')],
+      ['配件／特徵', formatWithNotes(ac, 'accessories').join('、')],
+    ];
+    let text = '===== 角色設定表' + (b.name ? '：'+b.name : '') + ' =====\n';
+    rows.forEach(([k,v])=>{
+      text += k + '：' + (v || '未填寫') + '\n';
+    });
+    text += '\n個性描述：\n' + ((ac.personality||'').trim() || '未填寫') + '\n';
+    text += '\n背景故事／委託備註：\n' + ((ac.notes||'').trim() || '未填寫') + '\n';
+    return text;
+  }
+
+  document.getElementById('copy-btn').addEventListener('click', ()=>{
+    const text = buildPlainText();
+    const showToast = ()=>{
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 1600);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(showToast).catch(()=>{
+        fallbackCopy(text); showToast();
+      });
+    } else {
+      fallbackCopy(text); showToast();
+    }
+  });
+
+  function fallbackCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  document.getElementById('reset-btn').addEventListener('click', ()=>{
+    if(!confirm('確定要清空目前角色的所有欄位嗎？')) return;
+    const fresh = blankCharacter();
+    fresh.id = activeId;
+    const idx = characters.findIndex(c=>c.id===activeId);
+    characters[idx] = fresh;
+    loadCharacterIntoForm(fresh);
+    renderTabs();
+  });
+
+  loadCharacterIntoForm(activeChar());
+  renderTabs();
+})();
+</script>
+
+</body>
+</html>
