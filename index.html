@@ -321,6 +321,36 @@
   }
   .item-note-row input:focus{outline:2px solid var(--accent); outline-offset:1px;}
 
+  .conditional-fields{
+    margin-top:16px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .conditional-fields:empty{margin-top:0;}
+  .conditional-field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+    min-width:140px;
+  }
+  .conditional-field label{
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--accent-deep);
+  }
+  .conditional-field input{
+    font-family:inherit;
+    font-size:14px;
+    padding:9px 14px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--panel-soft);
+    color:var(--ink);
+  }
+  .conditional-field input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+
   textarea{
     width:100%;
     font-family:inherit;
@@ -554,6 +584,7 @@
       <input type="text" placeholder="新增自訂瞳色...">
       <button type="button">新增</button>
     </div>
+    <div class="conditional-fields" id="cond-eyecolor"></div>
   </div>
 
   <div class="card" data-num="08">
@@ -667,7 +698,7 @@
     {id:'hair_texture', label:'髮質與動態感', type:'multi', options:['直髮 / 柔順黑直髮','微捲髮 / 自然捲','大波浪捲 / 浪漫長捲髮','羊毛捲 / 嬉皮捲','外翹短髮','呆毛 (Ahoge)','內層染 / 耳圈染','裙擺染','漸層染 (Ombre)','挑染 / 虎斑染']},
     {id:'hair_updo', label:'綁髮與特殊造型', type:'single', options:['單馬尾 (高馬尾 / 低馬尾)','雙馬尾 (高雙馬尾 / 低雙馬尾)','公主頭 / 半紮髮','丸子頭 / 雙丸子頭 (包包頭)','單側麻花辮','雙麻花辮','髒辮 / 拳擊辮']},
     {id:'haircolor', label:'髮色', type:'single', options:['黑色','深棕','棕色','亞麻色','金色','銀白','粉紅','藍色','紫色','紅色','漸層色','挑染多色']},
-    {id:'eyecolor', label:'瞳色', type:'single', options:['黑','棕','琥珀','藍','綠','紫','紅','異色瞳']},
+    {id:'eyecolor', label:'瞳色', type:'single', options:['黑','棕','琥珀','藍','綠','紫','紅','異色瞳'], conditional:{trigger:'異色瞳', fields:[{id:'left', label:'左眼瞳色', placeholder:'例：藍色'},{id:'right', label:'右眼瞳色', placeholder:'例：琥珀色'}]}},
     {id:'skintone', label:'膚色', type:'single', options:['白皙','小麥色','健康膚色','古銅色','病態蒼白','深膚色']},
     {id:'bodytype', label:'體型', type:'multi', options:['纖細','高挑','勻稱','豐滿','大胸','小胸','健壯','魁梧','嬌小','薄肌','倒三角體型','直角肩','寬肩','厚實胸膛','水蛇腰','腹肌','人魚線','長腿','蜜大腿','肌肉線條明顯的雙臂','骨節分明的手指']},
     {id:'clothing', label:'服裝風格', type:'multi', options:['休閒便服','正式西裝','制服','和服','洛麗塔','哥德風','機能風','運動風','泳裝','禮服','盔甲／戰鬥服','傳統服飾','未來科技風','性感暴露']},
@@ -677,11 +708,12 @@
 
   let uidCounter = 1;
   function blankCharacter(){
-    const c = { id:'c'+(uidCounter++), basic:{}, single:{}, multi:{}, itemNotes:{}, personality:'', notes:'' };
+    const c = { id:'c'+(uidCounter++), basic:{}, single:{}, multi:{}, itemNotes:{}, conditionalDetails:{}, personality:'', notes:'' };
     categories.forEach(cat=>{
       if(cat.type === 'single') c.single[cat.id] = '';
       else c.multi[cat.id] = [];
       if(cat.notesEnabled) c.itemNotes[cat.id] = {};
+      if(cat.conditional) c.conditionalDetails[cat.id] = {};
     });
     return c;
   }
@@ -797,6 +829,7 @@
       Array.from(row.children).forEach(c=>c.classList.remove('selected'));
       ac.single[cat.id] = isSame ? '' : label;
       if(!isSame && chip) chip.classList.add('selected');
+      if(cat.conditional) renderConditionalFields(cat, ac);
     } else {
       const list = ac.multi[cat.id];
       const idx = list.indexOf(label);
@@ -867,6 +900,32 @@
     });
   }
 
+  function renderConditionalFields(cat, char){
+    const container = document.getElementById('cond-'+cat.id);
+    if(!container) return;
+    container.innerHTML = '';
+    if(!char.conditionalDetails[cat.id]) char.conditionalDetails[cat.id] = {};
+    const isActive = char.single[cat.id] === cat.conditional.trigger;
+    if(!isActive) return;
+    cat.conditional.fields.forEach(f=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'conditional-field';
+      const label = document.createElement('label');
+      label.textContent = f.label;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = f.placeholder || '';
+      input.value = char.conditionalDetails[cat.id][f.id] || '';
+      input.addEventListener('input', ()=>{
+        char.conditionalDetails[cat.id][f.id] = input.value.trim();
+        render();
+      });
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      container.appendChild(wrap);
+    });
+  }
+
   function populateChips(char){
     document.querySelectorAll('.chip-row').forEach(row=>{
       const catId = row.getAttribute('data-cat');
@@ -879,6 +938,7 @@
         chip.classList.toggle('selected', isSelected);
       });
       if(cat.notesEnabled) renderItemNotes(cat, char);
+      if(cat.conditional) renderConditionalFields(cat, char);
     });
   }
 
@@ -956,6 +1016,19 @@
     ].filter(Boolean);
   }
 
+  function formatSingleWithConditional(ac, cat){
+    const val = ac.single[cat.id];
+    if(!val) return '';
+    if(cat.conditional && val === cat.conditional.trigger){
+      const detail = ac.conditionalDetails[cat.id] || {};
+      const parts = cat.conditional.fields
+        .map(f => detail[f.id] ? (f.label + '：' + detail[f.id]) : null)
+        .filter(Boolean);
+      if(parts.length) return val + '（' + parts.join('／') + '）';
+    }
+    return val;
+  }
+
   function formatWithNotes(ac, catId){
     const notesMap = ac.itemNotes[catId] || {};
     return ac.multi[catId].map(label=>{
@@ -982,7 +1055,7 @@
     html += line('年齡／身高／體重', basicLine2);
     html += line('職業／身份', b.occupation);
     html += line('髮型', collectHairTags(ac).join('、'));
-    html += line('瞳色', ac.single.eyecolor);
+    html += line('瞳色', formatSingleWithConditional(ac, categories.find(c=>c.id==='eyecolor')));
     html += line('膚色', ac.single.skintone);
     html += line('體型', ac.multi.bodytype.join('、'));
     html += line('服裝風格', ac.multi.clothing.join('、'));
@@ -1006,7 +1079,7 @@
       ['體重', b.weight],
       ['職業／身份', b.occupation],
       ['髮型', collectHairTags(ac).join('、')],
-      ['瞳色', ac.single.eyecolor],
+      ['瞳色', formatSingleWithConditional(ac, categories.find(c=>c.id==='eyecolor'))],
       ['膚色', ac.single.skintone],
       ['體型', ac.multi.bodytype.join('、')],
       ['服裝風格', ac.multi.clothing.join('、')],
