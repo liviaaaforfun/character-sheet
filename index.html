@@ -573,6 +573,7 @@
       <input type="text" placeholder="新增自訂髮色...">
       <button type="button">新增</button>
     </div>
+    <div class="conditional-fields" id="cond-haircolor"></div>
   </div>
 
   <div class="card" data-num="07">
@@ -697,8 +698,13 @@
     {id:'hair_bangs', label:'瀏海與分線', type:'single', options:['齊瀏海 / 妹妹頭','眉上劉海','空氣瀏海 / 碎瀏海','旁分 (三七分 / 二八分)','中分 (五五分)','M字瀏海','心形瀏海 / 逗號瀏海','遮眼瀏海 / 蓋眼髮','大背頭 / All Back']},
     {id:'hair_texture', label:'髮質與動態感', type:'multi', options:['直髮 / 柔順黑直髮','微捲髮 / 自然捲','大波浪捲 / 浪漫長捲髮','羊毛捲 / 嬉皮捲','外翹短髮','呆毛 (Ahoge)','內層染 / 耳圈染','裙擺染','漸層染 (Ombre)','挑染 / 虎斑染']},
     {id:'hair_updo', label:'綁髮與特殊造型', type:'single', options:['單馬尾 (高馬尾 / 低馬尾)','雙馬尾 (高雙馬尾 / 低雙馬尾)','公主頭 / 半紮髮','丸子頭 / 雙丸子頭 (包包頭)','單側麻花辮','雙麻花辮','髒辮 / 拳擊辮']},
-    {id:'haircolor', label:'髮色', type:'single', options:['黑色','深棕','棕色','亞麻色','金色','銀白','粉紅','藍色','紫色','紅色','漸層色','挑染多色']},
-    {id:'eyecolor', label:'瞳色', type:'single', options:['黑','棕','琥珀','藍','綠','紫','紅','異色瞳'], conditional:{trigger:'異色瞳', fields:[{id:'left', label:'左眼瞳色', placeholder:'例：藍色'},{id:'right', label:'右眼瞳色', placeholder:'例：琥珀色'}]}},
+    {id:'haircolor', label:'髮色', type:'single', options:['黑色','深棕','棕色','亞麻色','金色','銀白','粉紅','藍色','紫色','紅色','漸層色','挑染多色'], conditional:{
+      '漸層色':[{id:'root', label:'髮根色', placeholder:'例：黑色'},{id:'tip', label:'髮尾色', placeholder:'例：亞麻棕'},{id:'position', label:'漸層過渡位置', placeholder:'例：髮中開始、髮尾才漸層'}],
+      '挑染多色':[{id:'base', label:'底色', placeholder:'例：黑色'},{id:'highlight', label:'挑染色', placeholder:'例：藍色、紫色'},{id:'position', label:'挑染位置', placeholder:'例：髮尾、瀏海、整頭'}]
+    }},
+    {id:'eyecolor', label:'瞳色', type:'single', options:['黑','棕','琥珀','藍','綠','紫','紅','異色瞳'], conditional:{
+      '異色瞳':[{id:'left', label:'左眼瞳色', placeholder:'例：藍色'},{id:'right', label:'右眼瞳色', placeholder:'例：琥珀色'}]
+    }},
     {id:'skintone', label:'膚色', type:'single', options:['白皙','小麥色','健康膚色','古銅色','病態蒼白','深膚色']},
     {id:'bodytype', label:'體型', type:'multi', options:['纖細','高挑','勻稱','豐滿','大胸','小胸','健壯','魁梧','嬌小','薄肌','倒三角體型','直角肩','寬肩','厚實胸膛','水蛇腰','腹肌','人魚線','長腿','蜜大腿','肌肉線條明顯的雙臂','骨節分明的手指']},
     {id:'clothing', label:'服裝風格', type:'multi', options:['休閒便服','正式西裝','制服','和服','洛麗塔','哥德風','機能風','運動風','泳裝','禮服','盔甲／戰鬥服','傳統服飾','未來科技風','性感暴露']},
@@ -905,9 +911,12 @@
     if(!container) return;
     container.innerHTML = '';
     if(!char.conditionalDetails[cat.id]) char.conditionalDetails[cat.id] = {};
-    const isActive = char.single[cat.id] === cat.conditional.trigger;
-    if(!isActive) return;
-    cat.conditional.fields.forEach(f=>{
+    const val = char.single[cat.id];
+    const fields = cat.conditional[val];
+    if(!fields) return;
+    if(!char.conditionalDetails[cat.id][val]) char.conditionalDetails[cat.id][val] = {};
+    const detail = char.conditionalDetails[cat.id][val];
+    fields.forEach(f=>{
       const wrap = document.createElement('div');
       wrap.className = 'conditional-field';
       const label = document.createElement('label');
@@ -915,9 +924,9 @@
       const input = document.createElement('input');
       input.type = 'text';
       input.placeholder = f.placeholder || '';
-      input.value = char.conditionalDetails[cat.id][f.id] || '';
+      input.value = detail[f.id] || '';
       input.addEventListener('input', ()=>{
-        char.conditionalDetails[cat.id][f.id] = input.value.trim();
+        detail[f.id] = input.value.trim();
         render();
       });
       wrap.appendChild(label);
@@ -1012,16 +1021,17 @@
       ac.single.hair_bangs,
       ...ac.multi.hair_texture,
       ac.single.hair_updo,
-      ac.single.haircolor,
+      formatSingleWithConditional(ac, categories.find(c=>c.id==='haircolor')),
     ].filter(Boolean);
   }
 
   function formatSingleWithConditional(ac, cat){
     const val = ac.single[cat.id];
     if(!val) return '';
-    if(cat.conditional && val === cat.conditional.trigger){
-      const detail = ac.conditionalDetails[cat.id] || {};
-      const parts = cat.conditional.fields
+    const fields = cat.conditional && cat.conditional[val];
+    if(fields){
+      const detail = (ac.conditionalDetails[cat.id] && ac.conditionalDetails[cat.id][val]) || {};
+      const parts = fields
         .map(f => detail[f.id] ? (f.label + '：' + detail[f.id]) : null)
         .filter(Boolean);
       if(parts.length) return val + '（' + parts.join('／') + '）';
@@ -1037,8 +1047,13 @@
     });
   }
 
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
   function line(k, v){
-    return '<div class="sheet-row"><div class="k">'+k+'</div><div class="v'+(v?'':' empty')+'">'+(v || '未填寫')+'</div></div>';
+    const safeV = v ? escapeHtml(v) : '';
+    return '<div class="sheet-row"><div class="k">'+k+'</div><div class="v'+(safeV?'':' empty')+'">'+(safeV || '未填寫')+'</div></div>';
   }
 
   function render(){
